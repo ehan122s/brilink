@@ -25,6 +25,7 @@ const today = new Date().toISOString().slice(0, 10);
 export function TransactionsPage() {
   const [rows, setRows] = useState(() => normalizeTransactionRows(transactionRows));
   const [editingId, setEditingId] = useState(null);
+  const [demoBalanceSettingsByDate, setDemoBalanceSettingsByDate] = useState({});
   const [form, setForm] = useState({
     category: "Transfer",
     transactionDate: today,
@@ -66,7 +67,7 @@ export function TransactionsPage() {
   const totalNetAdmin = filteredRows.reduce((sum, row) => sum + row.netAdminValue, 0);
   const grandTotal = filteredRows.reduce((sum, row) => sum + row.totalValue, 0);
   const allTransactionsTotal = rows.reduce((sum, row) => sum + row.totalValue, 0);
-  const availableBalances = calculateAvailableBalances(rows, balanceSettings);
+  const availableBalances = calculateAvailableBalances(filteredRows, balanceSettings);
 
   useEffect(() => {
     async function loadTransactions() {
@@ -78,56 +79,10 @@ export function TransactionsPage() {
         setIsLoading(true);
         setErrorMessage("");
 
-        const [transactionsResult, balanceResult] = await Promise.allSettled([
-          fetchTransactions(),
-          fetchBalanceSettings(),
-        ]);
+        const transactionsResult = await fetchTransactions();
 
-        if (transactionsResult.status === "fulfilled") {
-          setRows(transactionsResult.value);
-        } else {
-          console.error(transactionsResult.reason);
-          setRows(normalizeTransactionRows(transactionRows));
-          setErrorMessage(
-            transactionsResult.reason?.message ??
-              "Gagal memuat transaksi dari Supabase.",
-          );
-        }
-
-        if (balanceResult.status === "fulfilled") {
-          setBalanceSettings(balanceResult.value);
-          setBalanceForm({
-            openingSaldo: String(balanceResult.value.openingSaldo || ""),
-            openingCash: String(balanceResult.value.openingCash || ""),
-          });
-        } else {
-          console.error(balanceResult.reason);
-          setBalanceSettings({
-            openingSaldo: 0,
-            openingCash: 0,
-          });
-          setBalanceForm({
-            openingSaldo: "",
-            openingCash: "",
-          });
-        }
-
-        if (
-          transactionsResult.status === "fulfilled" &&
-          balanceResult.status === "fulfilled"
-        ) {
-          setStatusMessage(
-            "Transaksi, saldo, dan uang cash berhasil dimuat dari Supabase.",
-          );
-        } else if (transactionsResult.status === "fulfilled") {
-          setStatusMessage(
-            "Transaksi berhasil dimuat dari Supabase. Pengaturan saldo dan cash masih default 0.",
-          );
-        } else {
-          setStatusMessage(
-            "Supabase belum siap dibaca sepenuhnya. Data demo ditampilkan sementara.",
-          );
-        }
+        setRows(transactionsResult);
+        setStatusMessage("Transaksi berhasil dimuat dari Supabase.");
       } catch (error) {
         console.error(error);
         setRows(normalizeTransactionRows(transactionRows));
@@ -144,6 +99,49 @@ export function TransactionsPage() {
 
     loadTransactions();
   }, []);
+
+  useEffect(() => {
+    async function loadBalanceSettingsByDate() {
+      if (!isSupabaseConfigured) {
+        const nextSettings = demoBalanceSettingsByDate[form.transactionDate] ?? {
+          balanceDate: form.transactionDate,
+          openingSaldo: 0,
+          openingCash: 0,
+        };
+
+        setBalanceSettings(nextSettings);
+        setBalanceForm({
+          openingSaldo: String(nextSettings.openingSaldo || ""),
+          openingCash: String(nextSettings.openingCash || ""),
+        });
+        return;
+      }
+
+      try {
+        setErrorMessage("");
+        const nextSettings = await fetchBalanceSettings(form.transactionDate);
+        setBalanceSettings(nextSettings);
+        setBalanceForm({
+          openingSaldo: String(nextSettings.openingSaldo || ""),
+          openingCash: String(nextSettings.openingCash || ""),
+        });
+      } catch (error) {
+        console.error(error);
+        setBalanceSettings({
+          balanceDate: form.transactionDate,
+          openingSaldo: 0,
+          openingCash: 0,
+        });
+        setBalanceForm({
+          openingSaldo: "",
+          openingCash: "",
+        });
+        setErrorMessage(error.message ?? "Gagal memuat saldo awal untuk tanggal ini.");
+      }
+    }
+
+    loadBalanceSettingsByDate();
+  }, [demoBalanceSettingsByDate, form.transactionDate]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -179,6 +177,7 @@ export function TransactionsPage() {
 
       if (isSupabaseConfigured) {
         const nextSettings = await saveBalanceSettings({
+          balanceDate: form.transactionDate,
           openingSaldo,
           openingCash,
         });
@@ -187,13 +186,20 @@ export function TransactionsPage() {
           openingSaldo: String(nextSettings.openingSaldo || ""),
           openingCash: String(nextSettings.openingCash || ""),
         });
-        setStatusMessage("Saldo awal dan uang cash awal berhasil disimpan ke Supabase.");
+        setStatusMessage("Saldo awal dan uang cash awal tanggal ini berhasil disimpan ke Supabase.");
       } else {
-        setBalanceSettings({
+        const nextSettings = {
+          balanceDate: form.transactionDate,
           openingSaldo,
           openingCash,
-        });
-        setStatusMessage("Saldo awal dan uang cash awal diperbarui di mode demo.");
+        };
+
+        setDemoBalanceSettingsByDate((current) => ({
+          ...current,
+          [form.transactionDate]: nextSettings,
+        }));
+        setBalanceSettings(nextSettings);
+        setStatusMessage("Saldo awal dan uang cash awal tanggal ini diperbarui di mode demo.");
       }
     } catch (error) {
       console.error(error);
@@ -528,10 +534,10 @@ export function TransactionsPage() {
       <div className="page-header-card">
         <div>
           <p className="eyebrow">Saldo dan kas</p>
-          <h2>Atur saldo awal dan uang cash awal outlet</h2>
+          <h2>Atur saldo awal dan uang cash awal per tanggal</h2>
           <p className="muted-copy">
-            Setelah disimpan, saldo tersedia dan cash tersedia akan ikut bergerak
-            otomatis dari transaksi yang masuk.
+            Tanggal <strong>{formatDisplayDate(form.transactionDate)}</strong> punya saldo
+            awal sendiri. Saat ganti tanggal, nilai tidak mengambil saldo hari kemarin.
           </p>
         </div>
 

@@ -49,11 +49,47 @@ create index if not exists expenses_expense_date_idx
 
 create table if not exists public.balance_settings (
   id uuid primary key default gen_random_uuid(),
-  singleton_key text not null unique default 'default',
+  balance_date date not null unique default current_date,
   opening_saldo bigint not null default 0 check (opening_saldo >= 0),
   opening_cash bigint not null default 0 check (opening_cash >= 0),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.balance_settings
+  add column if not exists balance_date date;
+
+update public.balance_settings
+set balance_date = coalesce(balance_date, current_date)
+where balance_date is null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'balance_settings'
+      and column_name = 'singleton_key'
+  ) then
+    execute 'alter table public.balance_settings alter column singleton_key drop default';
+  end if;
+end $$;
+
+alter table public.balance_settings
+  alter column balance_date set default current_date;
+
+alter table public.balance_settings
+  alter column balance_date set not null;
+
+alter table public.balance_settings
+  drop constraint if exists balance_settings_singleton_key_key;
+
+drop index if exists balance_settings_balance_date_idx;
+create unique index if not exists balance_settings_balance_date_idx
+  on public.balance_settings (balance_date);
+
+alter table public.balance_settings
+  drop column if exists singleton_key;
 
 alter table public.transactions enable row level security;
 alter table public.customers enable row level security;

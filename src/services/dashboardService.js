@@ -28,7 +28,7 @@ export async function fetchDashboardData() {
   const [transactions, expensesResult, balanceResult] = await Promise.allSettled([
     fetchTransactions(),
     fetchExpenses(),
-    fetchBalanceSettings(),
+    fetchBalanceSettings(today),
   ]);
 
   const transactionRows =
@@ -50,7 +50,10 @@ export async function fetchDashboardData() {
   const adminBersihKemarin = sumByDate(transactionRows, yesterday, "netAdminValue");
   const keuntunganHariIni = adminBersihHariIni - pengeluaranHariIni;
   const keuntunganKemarin = adminBersihKemarin - pengeluaranKemarin;
-  const balances = calculateAvailableBalances(transactionRows, balanceSettings);
+  const balances = calculateAvailableBalances(
+    transactionRows.filter((row) => isSameIsoDate(row.isoDate, today)),
+    balanceSettings,
+  );
 
   const categoryCounts = transactionRows
     .filter((row) => isSameIsoDate(row.isoDate, today))

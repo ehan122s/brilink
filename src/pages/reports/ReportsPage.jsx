@@ -1,31 +1,59 @@
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured } from "../../lib/supabase";
-import { fetchReportsData } from "../../services/reportService";
-import { reportCards } from "../../data/mockData";
+import {
+  buildReportsData,
+  fetchReportsData,
+} from "../../services/reportService";
+
+const today = new Date().toISOString().slice(0, 10);
+const currentMonth = today.slice(0, 7);
+
+const REPORT_MODES = [
+  { key: "overview", label: "Rekap" },
+  { key: "daily", label: "Harian" },
+  { key: "monthly", label: "Bulanan" },
+];
 
 export function ReportsPage() {
-  const [reportsData, setReportsData] = useState({
-    cards: reportCards,
-    insightTitle: "Performa bulan ini tumbuh 18.7% dibanding bulan lalu",
-    stats: [
-      { value: "Rp68,4 jt", label: "total transaksi" },
-      { value: "Rp9,2 jt", label: "profit kotor" },
-    ],
-  });
+  const [reportMode, setReportMode] = useState("overview");
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [reportsData, setReportsData] = useState(() =>
+    buildReportsData({
+      mode: "overview",
+      selectedDate: today,
+      selectedMonth: currentMonth,
+      hasTransactionsTable: false,
+      hasExpensesTable: false,
+    }),
+  );
   const [statusMessage, setStatusMessage] = useState(
     isSupabaseConfigured
       ? "Menghitung laporan dari Supabase..."
-      : "Mode demo aktif. Laporan masih memakai data contoh.",
+      : "Mode demo aktif. Laporan dihitung dari data contoh lokal.",
   );
 
   useEffect(() => {
     async function loadReports() {
       if (!isSupabaseConfigured) {
+        setReportsData(
+          buildReportsData({
+            mode: reportMode,
+            selectedDate,
+            selectedMonth,
+            hasTransactionsTable: false,
+            hasExpensesTable: false,
+          }),
+        );
         return;
       }
 
       try {
-        const data = await fetchReportsData();
+        const data = await fetchReportsData({
+          mode: reportMode,
+          selectedDate,
+          selectedMonth,
+        });
         setReportsData(data);
         setStatusMessage(
           !data.hasTransactionsTable
@@ -41,7 +69,7 @@ export function ReportsPage() {
     }
 
     loadReports();
-  }, []);
+  }, [reportMode, selectedDate, selectedMonth]);
 
   return (
     <section className="page-stack">
@@ -53,33 +81,59 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <div className="page-header-card">
+      <div className="page-header-card split-card">
         <div>
           <p className="eyebrow">Laba rugi</p>
-          <h2>Ringkasan uang kotor, fee, biaya, dan laba bersih usaha</h2>
+          <h2>Rekap, harian, dan bulanan dalam satu area laporan</h2>
+          <p className="muted-copy">{reportsData.periodCaption}</p>
+        </div>
+        <div className="reports-toolbar">
+          <div className="report-mode-switcher">
+            {REPORT_MODES.map((mode) => (
+              <button
+                key={mode.key}
+                className={`report-mode-button ${
+                  reportMode === mode.key ? "report-mode-button-active" : ""
+                }`}
+                type="button"
+                onClick={() => setReportMode(mode.key)}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          {reportMode === "daily" ? (
+            <label className="report-filter-label">
+              Tanggal
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
+            </label>
+          ) : null}
+
+          {reportMode === "monthly" ? (
+            <label className="report-filter-label">
+              Bulan
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+              />
+            </label>
+          ) : null}
         </div>
       </div>
 
-      <div className="report-grid">
-        {reportsData.cards.map((card) => (
-          <article key={card.title} className="report-card">
-            <p className="panel-kicker">{card.title}</p>
-            <h3>{card.subtitle}</h3>
-            <button className="ghost-button" type="button">
-              {card.action}
-            </button>
-          </article>
-        ))}
-      </div>
-
-      <div className="page-header-card split-card">
+      <div className="page-header-card report-period-card">
         <div>
-          <p className="eyebrow">Insight cepat</p>
-          <h2>{reportsData.insightTitle}</h2>
+          <p className="eyebrow">Periode aktif</p>
+          <h2>{reportsData.periodLabel}</h2>
           <p className="muted-copy">
-            Halaman ini disiapkan sebagai versi aplikasi dan web dari pola
-            pembukuan usaha: transaksi masuk, biaya dicatat, lalu hasil bersihnya
-            langsung terlihat tanpa hitung manual.
+            Mode <strong>{REPORT_MODES.find((item) => item.key === reportMode)?.label}</strong>
+            {" "}menampilkan angka sesuai periode yang sedang Anda pilih.
           </p>
         </div>
         <div className="stat-pile">
@@ -90,6 +144,41 @@ export function ReportsPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="report-grid">
+        {reportsData.cards.map((card) => (
+          <article key={card.title} className="report-card">
+            <p className="panel-kicker">{card.title}</p>
+            <h3>{card.action}</h3>
+            <p>{card.subtitle}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="page-header-card split-card">
+        <div>
+          <p className="eyebrow">Insight cepat</p>
+          <h2>{reportsData.insightTitle}</h2>
+          <p className="muted-copy">
+            Pola pembukuan sekarang bisa dibaca dari tiga sudut: total semua data,
+            satu hari tertentu, atau satu bulan tertentu.
+          </p>
+        </div>
+      </div>
+
+      <div className="report-breakdown-grid">
+        {reportsData.breakdown.map((item) => (
+          <article key={item.label} className="finance-item">
+            <div>
+              <strong>{item.label}</strong>
+              <p>{item.detail}</p>
+            </div>
+            <div className="finance-item-side">
+              <strong>{item.value}</strong>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

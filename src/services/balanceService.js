@@ -3,60 +3,75 @@ import { getTransactionBalanceImpact } from "../utils/transactionHelpers";
 
 const DEFAULT_BALANCE_SETTINGS = {
   id: null,
+  balanceDate: null,
   openingSaldo: 0,
   openingCash: 0,
   updatedAt: null,
 };
 
-function normalizeBalanceSettings(row) {
+function getTodayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeBalanceDate(balanceDate) {
+  return balanceDate ?? getTodayIsoDate();
+}
+
+function normalizeBalanceSettings(row, balanceDate) {
   if (!row) {
-    return DEFAULT_BALANCE_SETTINGS;
+    return {
+      ...DEFAULT_BALANCE_SETTINGS,
+      balanceDate: normalizeBalanceDate(balanceDate),
+    };
   }
 
   return {
     id: row.id ?? null,
+    balanceDate: row.balance_date ?? normalizeBalanceDate(balanceDate),
     openingSaldo: Number(row.opening_saldo) || 0,
     openingCash: Number(row.opening_cash) || 0,
     updatedAt: row.updated_at ?? null,
   };
 }
 
-export async function fetchBalanceSettings() {
+export async function fetchBalanceSettings(balanceDate) {
+  const normalizedDate = normalizeBalanceDate(balanceDate);
   const { data, error } = await supabase
     .from("balance_settings")
-    .select("id, opening_saldo, opening_cash, updated_at")
-    .eq("singleton_key", "default")
+    .select("id, balance_date, opening_saldo, opening_cash, updated_at")
+    .eq("balance_date", normalizedDate)
     .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  return normalizeBalanceSettings(data);
+  return normalizeBalanceSettings(data, normalizedDate);
 }
 
 export async function saveBalanceSettings(payload) {
+  const normalizedDate = normalizeBalanceDate(payload.balanceDate);
   const { data, error } = await supabase
     .from("balance_settings")
     .upsert(
       {
-        singleton_key: "default",
+        balance_date: normalizedDate,
         opening_saldo: payload.openingSaldo,
         opening_cash: payload.openingCash,
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: "singleton_key",
+        onConflict: "balance_date",
       },
     )
-    .select("id, opening_saldo, opening_cash, updated_at")
+    .select("id, balance_date, opening_saldo, opening_cash, updated_at")
     .single();
 
   if (error) {
     throw error;
   }
 
-  return normalizeBalanceSettings(data);
+  return normalizeBalanceSettings(data, normalizedDate);
 }
 
 export function calculateAvailableBalances(rows, settings) {
@@ -82,4 +97,3 @@ export function calculateAvailableBalances(rows, settings) {
     },
   );
 }
-

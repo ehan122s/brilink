@@ -13,8 +13,8 @@ Catatan:
 - Setelah login owner/kasir sudah dibuat, policy sebaiknya diperketat memakai auth dan role pengguna.
 - Halaman `dashboard`, `activity`, dan `reports` membaca tabel `transactions` dan `expenses`.
 - Halaman `customers` membaca tabel `customers`.
-- Halaman `transactions` sekarang juga membaca tabel `balance_settings` untuk `saldo awal` dan `cash awal`.
+- Halaman `transactions` dan `cashflow` sekarang membaca tabel `balance_settings` untuk `saldo awal` dan `cash awal` per tanggal.
 - Halaman `expenses` memakai tabel `expenses` untuk CRUD pengeluaran usaha.
 - Kalau `customers` atau `expenses` belum Anda buat di project Supabase, halaman tetap hidup tetapi akan menampilkan fallback/status setup.
-- Kalau fitur saldo dan cash belum muncul live, jalankan ulang isi [schema.sql](C:/Users/Hype/Documents/e-pkl/sisfo/supabase/schema.sql) agar tabel `balance_settings` ikut dibuat.
+- Kalau fitur saldo dan cash per tanggal belum muncul live, jalankan ulang isi [schema.sql](C:/Users/Hype/Documents/e-pkl/sisfo/supabase/schema.sql) agar struktur `balance_settings` ikut diperbarui.
 - Kalau Anda memakai fitur `admin bank`, jalankan ulang isi `schema.sql` agar kolom `bank_admin_fee` ikut ditambahkan ke tabel `transactions`.

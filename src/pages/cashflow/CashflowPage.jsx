@@ -10,8 +10,11 @@ import { fetchTransactions } from "../../services/transactionService";
 import { transactionRows } from "../../data/mockData";
 import {
   formatCurrency,
+  formatDisplayDate,
   normalizeTransactionRows,
 } from "../../utils/transactionHelpers";
+
+const today = new Date().toISOString().slice(0, 10);
 
 const SHEET_ROWS = [
   {
@@ -240,6 +243,8 @@ export function CashflowPage() {
     normalizeTransactionRows(transactionRows),
   );
   const [expenses, setExpenses] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [demoBalanceSettingsByDate, setDemoBalanceSettingsByDate] = useState({});
   const [balanceSettings, setBalanceSettings] = useState({
     openingSaldo: 0,
     openingCash: 0,
@@ -262,12 +267,10 @@ export function CashflowPage() {
         return;
       }
 
-      const [transactionsResult, expensesResult, balanceResult] =
-        await Promise.allSettled([
-          fetchTransactions(),
-          fetchExpenses(),
-          fetchBalanceSettings(),
-        ]);
+      const [transactionsResult, expensesResult] = await Promise.allSettled([
+        fetchTransactions(),
+        fetchExpenses(),
+      ]);
 
       if (transactionsResult.status === "fulfilled") {
         setTransactions(transactionsResult.value);
@@ -275,14 +278,6 @@ export function CashflowPage() {
 
       if (expensesResult.status === "fulfilled") {
         setExpenses(expensesResult.value);
-      }
-
-      if (balanceResult.status === "fulfilled") {
-        setBalanceSettings(balanceResult.value);
-        setBalanceForm({
-          openingSaldo: String(balanceResult.value.openingSaldo || ""),
-          openingCash: String(balanceResult.value.openingCash || ""),
-        });
       }
 
       setStatusMessage(
@@ -297,6 +292,49 @@ export function CashflowPage() {
       setStatusMessage("Gagal memuat pembukuan dari Supabase. Data contoh ditampilkan.");
     });
   }, []);
+
+  useEffect(() => {
+    async function loadBalanceSettingsByDate() {
+      if (!isSupabaseConfigured) {
+        const nextSettings = demoBalanceSettingsByDate[selectedDate] ?? {
+          balanceDate: selectedDate,
+          openingSaldo: 0,
+          openingCash: 0,
+        };
+
+        setBalanceSettings(nextSettings);
+        setBalanceForm({
+          openingSaldo: String(nextSettings.openingSaldo || ""),
+          openingCash: String(nextSettings.openingCash || ""),
+        });
+        return;
+      }
+
+      try {
+        setErrorMessage("");
+        const nextSettings = await fetchBalanceSettings(selectedDate);
+        setBalanceSettings(nextSettings);
+        setBalanceForm({
+          openingSaldo: String(nextSettings.openingSaldo || ""),
+          openingCash: String(nextSettings.openingCash || ""),
+        });
+      } catch (error) {
+        console.error(error);
+        setBalanceSettings({
+          balanceDate: selectedDate,
+          openingSaldo: 0,
+          openingCash: 0,
+        });
+        setBalanceForm({
+          openingSaldo: "",
+          openingCash: "",
+        });
+        setErrorMessage(error.message ?? "Gagal memuat modal awal untuk tanggal ini.");
+      }
+    }
+
+    loadBalanceSettingsByDate();
+  }, [demoBalanceSettingsByDate, selectedDate]);
 
   function handleBalanceChange(event) {
     const { name, value } = event.target;
@@ -315,6 +353,7 @@ export function CashflowPage() {
 
       if (isSupabaseConfigured) {
         const nextSettings = await saveBalanceSettings({
+          balanceDate: selectedDate,
           openingSaldo,
           openingCash,
         });
@@ -324,10 +363,20 @@ export function CashflowPage() {
           openingSaldo: String(nextSettings.openingSaldo || ""),
           openingCash: String(nextSettings.openingCash || ""),
         });
-        setStatusMessage("Modal awal cash dan saldo berhasil disimpan ke Supabase.");
+        setStatusMessage("Modal awal cash dan saldo tanggal ini berhasil disimpan ke Supabase.");
       } else {
-        setBalanceSettings({ openingSaldo, openingCash });
-        setStatusMessage("Modal awal cash dan saldo diperbarui di mode demo.");
+        const nextSettings = {
+          balanceDate: selectedDate,
+          openingSaldo,
+          openingCash,
+        };
+
+        setDemoBalanceSettingsByDate((current) => ({
+          ...current,
+          [selectedDate]: nextSettings,
+        }));
+        setBalanceSettings(nextSettings);
+        setStatusMessage("Modal awal cash dan saldo tanggal ini diperbarui di mode demo.");
       }
     } catch (error) {
       console.error(error);
@@ -337,7 +386,9 @@ export function CashflowPage() {
     }
   }
 
-  const sheetRows = buildSheetRows(transactions, expenses, balanceSettings);
+  const selectedTransactions = transactions.filter((row) => row.isoDate === selectedDate);
+  const selectedExpenses = expenses.filter((row) => row.isoDate === selectedDate);
+  const sheetRows = buildSheetRows(selectedTransactions, selectedExpenses, balanceSettings);
   const totalCount = sheetRows
     .filter((row) => row.countInTotal)
     .reduce((sum, row) => sum + row.count, 0);
@@ -368,8 +419,17 @@ export function CashflowPage() {
           <div>
             <p className="panel-kicker">Sheet pembukuan</p>
             <h3>Rekap transaksi, cash, saldo, admin pelanggan, dan admin bank</h3>
+            <p className="muted-copy">Tanggal {formatDisplayDate(selectedDate)}</p>
           </div>
           <div className="ledger-actions">
+            <label className="ledger-filter-label">
+              Tanggal
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
+            </label>
             <Link className="ghost-button compact-button" to="/transactions">
               Input transaksi
             </Link>
@@ -518,9 +578,10 @@ export function CashflowPage() {
       <div className="page-header-card split-card">
         <div>
           <p className="eyebrow">Modal awal</p>
-          <h2>Atur cash awal dan saldo awal usaha</h2>
+          <h2>Atur cash awal dan saldo awal usaha per tanggal</h2>
           <p className="muted-copy">
-            Nilai ini akan langsung masuk ke baris <strong>Modal Awal</strong> seperti format pembukuan pada contoh.
+            Tanggal <strong>{formatDisplayDate(selectedDate)}</strong> punya modal awal
+            sendiri dan tidak mengambil nilai tanggal sebelumnya.
           </p>
         </div>
 
