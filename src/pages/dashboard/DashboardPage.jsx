@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
-import { fetchDashboardData } from "../../services/dashboardService";
+import {
+  buildDashboardData,
+  fetchDashboardData,
+} from "../../services/dashboardService";
 import { RevenueChart } from "../../components/charts/RevenueChart";
 import { SummaryCard } from "../../components/dashboard/SummaryCard";
-import {
-  operationalHighlights,
-  summaryCards,
-  transactionTrend,
-} from "../../data/mockData";
 
 export function DashboardPage() {
-  const [dashboardData, setDashboardData] = useState({
-    operationalHighlights,
-    summaryCards,
-    transactionTrend,
-  });
+  const [dashboardData, setDashboardData] = useState(() =>
+    buildDashboardData({
+      hasTransactionsTable: false,
+      hasExpensesTable: false,
+      hasBalanceSettingsTable: false,
+    }),
+  );
   const [statusMessage, setStatusMessage] = useState(
     isSupabaseConfigured
       ? "Mengambil ringkasan dashboard dari Supabase..."
@@ -63,13 +63,9 @@ export function DashboardPage() {
 
       <div className="dashboard-hero">
         <div className="dashboard-hero-copy">
-          <p className="eyebrow">Ringkasan outlet 21 Juni 2026</p>
-          <h2>Pembukuan usaha jadi lebih gampang dibaca dari cash, saldo, biaya, dan laba.</h2>
-          <p className="muted-copy">
-            Struktur aplikasi sekarang diarahkan seperti pembukuan agen BRILink:
-            transaksi dipisah, pengeluaran dipisah, kas dan saldo dipantau khusus,
-            lalu hasil akhirnya masuk ke laporan laba rugi.
-          </p>
+          <p className="eyebrow">{dashboardData.hero.eyebrow}</p>
+          <h2>{dashboardData.hero.title}</h2>
+          <p className="muted-copy">{dashboardData.hero.copy}</p>
 
           <div className="hero-actions">
             <Link className="primary-button" to="/transactions">
