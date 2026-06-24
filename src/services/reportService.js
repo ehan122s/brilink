@@ -15,6 +15,10 @@ function getCurrentMonthValue() {
   return getTodayIsoDate().slice(0, 7);
 }
 
+function getCurrentYearValue() {
+  return getTodayIsoDate().slice(0, 4);
+}
+
 function formatMonthLabel(monthValue) {
   return new Intl.DateTimeFormat("id-ID", {
     month: "long",
@@ -22,11 +26,19 @@ function formatMonthLabel(monthValue) {
   }).format(new Date(`${monthValue}-01`));
 }
 
+function formatYearLabel(yearValue) {
+  return `Tahun ${yearValue}`;
+}
+
 function matchesMonth(isoDate, monthValue) {
   return String(isoDate).startsWith(monthValue);
 }
 
-function getScopedRows(transactionRows, expenses, mode, selectedDate, selectedMonth) {
+function matchesYear(isoDate, yearValue) {
+  return String(isoDate).startsWith(yearValue);
+}
+
+function getScopedRows(transactionRows, expenses, mode, selectedDate, selectedMonth, selectedYear) {
   if (mode === "daily") {
     return {
       transactions: transactionRows.filter((row) => row.isoDate === selectedDate),
@@ -42,6 +54,15 @@ function getScopedRows(transactionRows, expenses, mode, selectedDate, selectedMo
       expenses: expenses.filter((row) => matchesMonth(row.isoDate, selectedMonth)),
       periodLabel: formatMonthLabel(selectedMonth),
       periodCaption: "Semua angka dihitung dari satu bulan yang dipilih.",
+    };
+  }
+
+  if (mode === "yearly") {
+    return {
+      transactions: transactionRows.filter((row) => matchesYear(row.isoDate, selectedYear)),
+      expenses: expenses.filter((row) => matchesYear(row.isoDate, selectedYear)),
+      periodLabel: formatYearLabel(selectedYear),
+      periodCaption: "Semua angka dihitung dari satu tahun yang dipilih.",
     };
   }
 
@@ -88,13 +109,14 @@ function buildReportCards(metrics, transactionCount) {
   ];
 }
 
-function buildMetrics(mode, selectedDate, selectedMonth, transactionRows, expenses) {
+function buildMetrics(mode, selectedDate, selectedMonth, selectedYear, transactionRows, expenses) {
   const scoped = getScopedRows(
     transactionRows,
     expenses,
     mode,
     selectedDate,
     selectedMonth,
+    selectedYear,
   );
   const totalTransactions = scoped.transactions.reduce((sum, row) => sum + row.totalValue, 0);
   const totalNominal = scoped.transactions.reduce((sum, row) => sum + row.nominalValue, 0);
@@ -113,6 +135,7 @@ function buildMetrics(mode, selectedDate, selectedMonth, transactionRows, expens
     mode,
     selectedDate,
     selectedMonth,
+    selectedYear,
     periodLabel: scoped.periodLabel,
     periodCaption: scoped.periodCaption,
     totalTransactions,
@@ -140,11 +163,18 @@ function buildMetrics(mode, selectedDate, selectedMonth, transactionRows, expens
         ? `Laporan harian ${scoped.periodLabel} menunjukkan laba bersih ${formatCurrency(netProfit)}`
         : mode === "monthly"
           ? `Laporan bulanan ${scoped.periodLabel} menghasilkan laba bersih ${formatCurrency(netProfit)}`
+          : mode === "yearly"
+            ? `Laporan tahunan ${scoped.periodLabel} menghasilkan laba bersih ${formatCurrency(netProfit)}`
           : `Rekap seluruh periode saat ini menghasilkan laba bersih ${formatCurrency(netProfit)}`,
     stats: [
       {
         value: String(scoped.transactions.length),
-        label: mode === "monthly" ? "jumlah transaksi bulan ini" : "jumlah transaksi",
+        label:
+          mode === "monthly"
+            ? "jumlah transaksi bulan ini"
+            : mode === "yearly"
+              ? "jumlah transaksi tahun ini"
+              : "jumlah transaksi",
       },
       {
         value: formatCurrency(averageTransaction),
@@ -194,12 +224,20 @@ export function buildReportsData({
   mode = "overview",
   selectedDate = getTodayIsoDate(),
   selectedMonth = getCurrentMonthValue(),
+  selectedYear = getCurrentYearValue(),
   transactions = normalizeTransactionRows(transactionRows),
   expenses = [],
   hasTransactionsTable = true,
   hasExpensesTable = true,
 } = {}) {
-  const metrics = buildMetrics(mode, selectedDate, selectedMonth, transactions, expenses);
+  const metrics = buildMetrics(
+    mode,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    transactions,
+    expenses,
+  );
 
   return {
     ...metrics,
@@ -211,6 +249,7 @@ export function buildReportsData({
 export async function fetchReportsData(options = {}) {
   const selectedDate = options.selectedDate ?? getTodayIsoDate();
   const selectedMonth = options.selectedMonth ?? getCurrentMonthValue();
+  const selectedYear = options.selectedYear ?? getCurrentYearValue();
   const mode = options.mode ?? "overview";
 
   const [transactions, expensesResult] = await Promise.allSettled([
@@ -227,6 +266,7 @@ export async function fetchReportsData(options = {}) {
     mode,
     selectedDate,
     selectedMonth,
+    selectedYear,
     transactions: transactionData,
     expenses,
     hasTransactionsTable: transactions.status === "fulfilled",

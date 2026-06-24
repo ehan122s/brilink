@@ -1,3 +1,14 @@
+function toIsoDate(value) {
+  return value.toISOString().slice(0, 10);
+}
+
+const mockTodayDate = new Date();
+const mockYesterdayDate = new Date(mockTodayDate);
+mockYesterdayDate.setDate(mockYesterdayDate.getDate() - 1);
+
+const mockTodayIsoDate = toIsoDate(mockTodayDate);
+const mockYesterdayIsoDate = toIsoDate(mockYesterdayDate);
+
 export const summaryCards = [
   {
     title: "Pemasukan Hari Ini",
@@ -165,7 +176,9 @@ export const transactionRows = [
     nominal: "Rp2.000.000",
     adminFee: "Rp7.500",
     total: "Rp2.007.500",
-    date: "20 Jun 2026",
+    date: "Hari ini",
+    isoDate: mockTodayIsoDate,
+    createdAt: `${mockTodayIsoDate}T08:15:00.000Z`,
     cashier: "Kasir 1",
   },
   {
@@ -175,7 +188,9 @@ export const transactionRows = [
     nominal: "Rp1.250.000",
     adminFee: "Rp6.000",
     total: "Rp1.256.000",
-    date: "20 Jun 2026",
+    isoDate: mockTodayIsoDate,
+    createdAt: `${mockTodayIsoDate}T10:05:00.000Z`,
+    date: "Hari ini",
     cashier: "Kasir 2",
   },
   {
@@ -185,7 +200,9 @@ export const transactionRows = [
     nominal: "Rp500.000",
     adminFee: "Rp4.000",
     total: "Rp504.000",
-    date: "20 Jun 2026",
+    isoDate: mockTodayIsoDate,
+    createdAt: `${mockTodayIsoDate}T11:42:00.000Z`,
+    date: "Hari ini",
     cashier: "Kasir 1",
   },
   {
@@ -195,7 +212,9 @@ export const transactionRows = [
     nominal: "Rp890.000",
     adminFee: "Rp5.000",
     total: "Rp895.000",
-    date: "19 Jun 2026",
+    isoDate: mockYesterdayIsoDate,
+    createdAt: `${mockYesterdayIsoDate}T14:10:00.000Z`,
+    date: "Kemarin",
     cashier: "Kasir 2",
   },
 ];

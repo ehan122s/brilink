@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.brilinkflow.app",
-  appName: "BRILink Flow",
+  appName: "BukuLink Konter",
   webDir: "dist",
   bundledWebRuntime: false,
   server: {

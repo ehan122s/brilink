@@ -7,22 +7,26 @@ import {
 
 const today = new Date().toISOString().slice(0, 10);
 const currentMonth = today.slice(0, 7);
+const currentYear = today.slice(0, 4);
 
 const REPORT_MODES = [
   { key: "overview", label: "Rekap" },
   { key: "daily", label: "Harian" },
   { key: "monthly", label: "Bulanan" },
+  { key: "yearly", label: "Tahunan" },
 ];
 
 export function ReportsPage() {
   const [reportMode, setReportMode] = useState("overview");
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [reportsData, setReportsData] = useState(() =>
     buildReportsData({
       mode: "overview",
       selectedDate: today,
       selectedMonth: currentMonth,
+      selectedYear: currentYear,
       hasTransactionsTable: false,
       hasExpensesTable: false,
     }),
@@ -41,6 +45,7 @@ export function ReportsPage() {
             mode: reportMode,
             selectedDate,
             selectedMonth,
+            selectedYear,
             hasTransactionsTable: false,
             hasExpensesTable: false,
           }),
@@ -53,6 +58,7 @@ export function ReportsPage() {
           mode: reportMode,
           selectedDate,
           selectedMonth,
+          selectedYear,
         });
         setReportsData(data);
         setStatusMessage(
@@ -69,7 +75,7 @@ export function ReportsPage() {
     }
 
     loadReports();
-  }, [reportMode, selectedDate, selectedMonth]);
+  }, [reportMode, selectedDate, selectedMonth, selectedYear]);
 
   return (
     <section className="page-stack">
@@ -83,8 +89,8 @@ export function ReportsPage() {
 
       <div className="page-header-card split-card">
         <div>
-          <p className="eyebrow">Laba rugi</p>
-          <h2>Rekap, harian, dan bulanan dalam satu area laporan</h2>
+          <p className="eyebrow">Laporan agen</p>
+          <h2>Rekap, harian, bulanan, dan tahunan dalam satu area laporan</h2>
           <p className="muted-copy">{reportsData.periodCaption}</p>
         </div>
         <div className="reports-toolbar">
@@ -121,6 +127,19 @@ export function ReportsPage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(event) => setSelectedMonth(event.target.value)}
+              />
+            </label>
+          ) : null}
+
+          {reportMode === "yearly" ? (
+            <label className="report-filter-label">
+              Tahun
+              <input
+                type="number"
+                min="2020"
+                max="2100"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(event.target.value)}
               />
             </label>
           ) : null}
@@ -162,7 +181,7 @@ export function ReportsPage() {
           <h2>{reportsData.insightTitle}</h2>
           <p className="muted-copy">
             Pola pembukuan sekarang bisa dibaca dari tiga sudut: total semua data,
-            satu hari tertentu, atau satu bulan tertentu.
+            satu hari tertentu, satu bulan tertentu, atau satu tahun tertentu.
           </p>
         </div>
       </div>

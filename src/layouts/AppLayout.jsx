@@ -2,59 +2,72 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { InstallPrompt } from "../components/app/InstallPrompt";
 
 const desktopNavigationItems = [
-  { label: "Dashboard", path: "/dashboard" },
+  { label: "Beranda", path: "/dashboard" },
   { label: "Transaksi", path: "/transactions" },
-  { label: "Kas & Saldo", path: "/cashflow" },
-  { label: "Pengeluaran", path: "/expenses" },
-  { label: "Laba Rugi", path: "/reports" },
-  { label: "Setelan", path: "/settings" },
+  { label: "Saldo Harian", path: "/cashflow" },
+  { label: "Biaya", path: "/expenses" },
+  { label: "Laporan", path: "/reports" },
+  { label: "Pengaturan", path: "/settings" },
 ];
 
 const mobileNavigationItems = [
   { label: "Home", path: "/dashboard" },
-  { label: "Transaksi", path: "/transactions" },
-  { label: "Kas", path: "/cashflow" },
+  { label: "Saldo", path: "/cashflow" },
+  { label: "Transaksi", path: "/transactions", emphasis: true },
   { label: "Biaya", path: "/expenses" },
   { label: "Laporan", path: "/reports" },
 ];
 
 const pageMeta = {
   "/dashboard": {
-    eyebrow: "Pembukuan Hari Ini",
-    title: "Pantau cash, saldo, pemasukan, dan laba dari satu ringkasan inti.",
+    eyebrow: "Beranda Operator",
+    title: "Pantau transaksi, saldo, cash, dan laporan dari layar utama operator.",
+    mobileTitle: "Beranda",
   },
   "/transactions": {
     eyebrow: "Transaksi",
-    title: "Catat transaksi harian dan biarkan totalnya dihitung otomatis.",
+    title: "Input layanan BRILink, mini ATM, dan konter dengan form kerja harian.",
+    mobileTitle: "Input Transaksi",
   },
   "/cashflow": {
-    eyebrow: "Kas & Saldo",
-    title: "Pisahkan arus cash dan saldo agar pembukuan usaha lebih jelas.",
+    eyebrow: "Saldo Harian",
+    title: "Kelola cash awal, saldo awal, dan pergerakan dana per tanggal.",
+    mobileTitle: "Saldo Harian",
   },
   "/expenses": {
-    eyebrow: "Pengeluaran",
-    title: "Catat biaya usaha untuk menghitung laba bersih dengan benar.",
+    eyebrow: "Biaya Outlet",
+    title: "Catat pengeluaran operasional agar pembukuan outlet tetap rapi.",
+    mobileTitle: "Biaya Outlet",
   },
   "/reports": {
-    eyebrow: "Laba Rugi",
-    title: "Baca ringkasan usaha dari uang kotor sampai uang bersih.",
+    eyebrow: "Laporan",
+    title: "Lihat rekap keseluruhan, laporan harian, bulanan, dan tahunan outlet.",
+    mobileTitle: "Laporan",
   },
   "/settings": {
-    eyebrow: "Setelan",
-    title: "Atur outlet, sinkronisasi, dan pondasi aplikasi pembukuan.",
+    eyebrow: "Pengaturan",
+    title: "Atur identitas outlet, akun saldo, dan layanan utama agen.",
+    mobileTitle: "Pengaturan",
   },
 };
 
 export function AppLayout() {
   const location = useLocation();
   const meta = pageMeta[location.pathname] ?? pageMeta["/dashboard"];
+  const todayLabel = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+  }).format(new Date());
 
   return (
     <div className="shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <p className="brand-tag">BRILink Flow</p>
-          <h1>Pembukuan usaha BRILink dan konter yang rapi untuk owner dan kasir.</h1>
+          <p className="brand-tag">BukuLink Konter</p>
+          <h1>Aplikasi operasional harian untuk agen BRILink, mini ATM, dan usaha konter.</h1>
+          <p className="sidebar-copy">
+            Model tampilannya diarahkan seperti aplikasi operator: fokus ke transaksi, saldo, dan rekap harian.
+          </p>
         </div>
 
         <nav className="side-nav">
@@ -72,20 +85,39 @@ export function AppLayout() {
         </nav>
 
         <div className="sidebar-card">
-          <p className="sidebar-card-title">Fokus Hari Ini</p>
-          <strong>Pembukuan Harian</strong>
-          <span>Cash, saldo, biaya, dan laba selalu sinkron.</span>
+          <p className="sidebar-card-title">Shift Aktif</p>
+          <strong>Outlet Utama</strong>
+          <span>Fokus transaksi, set saldo harian, dan tutup buku harian sebelum ganti tanggal.</span>
         </div>
       </aside>
 
       <main className="content">
+        <div className="mobile-shell-header">
+          <div className="mobile-shell-brand">
+            <span className="mobile-shell-logo">BK</span>
+            <div>
+              <strong>BukuLink Konter</strong>
+              <span>Outlet aktif</span>
+            </div>
+          </div>
+          <div className="mobile-shell-meta">
+            <span>{todayLabel}</span>
+            <span>BRILink Mobile</span>
+          </div>
+        </div>
+
         <div className="mobile-app-bar">
-          <div>
+          <div className="mobile-app-bar-copy">
+            <span className="mobile-app-badge">BukuLink Konter</span>
             <p className="eyebrow">{meta.eyebrow}</p>
-            <h2>{meta.title}</h2>
+            <h2>{meta.mobileTitle ?? meta.title}</h2>
+          </div>
+          <div className="mobile-app-bar-side">
+            <span className="mobile-app-date">{todayLabel}</span>
+            <span className="mobile-app-status">Outlet aktif</span>
           </div>
           <Link className="mobile-primary-action" to="/transactions">
-            + Transaksi
+            Input
           </Link>
         </div>
 
@@ -99,10 +131,10 @@ export function AppLayout() {
 
           <div className="topbar-actions">
             <button className="ghost-button" type="button">
-              Export Rekap
+              Rekap Hari Ini
             </button>
             <Link className="primary-button" to="/transactions">
-              + Tambah Transaksi
+              + Input Transaksi
             </Link>
           </div>
         </header>
@@ -118,7 +150,9 @@ export function AppLayout() {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `mobile-nav-link ${isActive ? "mobile-nav-link-active" : ""}`
+              `mobile-nav-link ${item.emphasis ? "mobile-nav-link-emphasis" : ""} ${
+                isActive ? "mobile-nav-link-active" : ""
+              }`
             }
           >
             <span className="mobile-nav-dot" />

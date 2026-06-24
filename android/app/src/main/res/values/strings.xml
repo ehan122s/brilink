@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BRILink Flow</string>
-    <string name="title_activity_main">BRILink Flow</string>
+    <string name="app_name">BukuLink Konter</string>
+    <string name="title_activity_main">BukuLink Konter</string>
     <string name="package_name">com.brilinkflow.app</string>
     <string name="custom_url_scheme">com.brilinkflow.app</string>
 </resources>

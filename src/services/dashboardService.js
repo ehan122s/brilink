@@ -59,6 +59,90 @@ function buildHeroData({
   };
 }
 
+function buildServiceTiles(todayTransactions, todayExpenses) {
+  const definitions = [
+    {
+      key: "transfer",
+      label: "Transfer",
+      category: "Transfer",
+      tone: "primary",
+    },
+    {
+      key: "tarik-tunai",
+      label: "Tarik Tunai",
+      category: "Tarik tunai",
+      tone: "success",
+    },
+    {
+      key: "setor-tunai",
+      label: "Setor Tunai",
+      category: "Setor tunai",
+      tone: "neutral",
+    },
+    {
+      key: "topup",
+      label: "Top Up",
+      category: "Top up e-wallet",
+      tone: "primary",
+    },
+    {
+      key: "tagihan",
+      label: "PPOB",
+      categories: ["Pembayaran tagihan", "Token listrik", "Pulsa"],
+      tone: "warning",
+    },
+  ];
+
+  const tiles = definitions.map((definition) => {
+    const matches = todayTransactions.filter((row) =>
+      definition.categories
+        ? definition.categories.includes(row.category)
+        : row.category === definition.category,
+    );
+    const total = matches.reduce((sum, row) => sum + row.totalValue, 0);
+
+    return {
+      key: definition.key,
+      label: definition.label,
+      count: matches.length,
+      total: formatCurrency(total),
+      tone: definition.tone,
+      detail:
+        matches.length > 0
+          ? `${matches.length} transaksi hari ini`
+          : "Belum ada transaksi hari ini",
+    };
+  });
+
+  tiles.push({
+    key: "pengeluaran",
+    label: "Biaya",
+    count: todayExpenses.length,
+    total: formatCurrency(todayExpenses.reduce((sum, item) => sum + item.amount, 0)),
+    tone: "danger",
+    detail:
+      todayExpenses.length > 0
+        ? `${todayExpenses.length} biaya operasional`
+        : "Belum ada biaya hari ini",
+  });
+
+  return tiles;
+}
+
+function buildRecentTransactions(rows) {
+  return [...rows]
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))
+    .slice(0, 5)
+    .map((row) => ({
+      code: row.code,
+      category: row.category,
+      cashier: row.cashier,
+      total: row.total,
+      adminFee: row.adminFee,
+      time: formatDisplayDate(row.isoDate),
+    }));
+}
+
 export function buildDashboardData({
   transactions = normalizeTransactionRows(transactionRows),
   expenses = [],
@@ -107,6 +191,32 @@ export function buildDashboardData({
 
   return {
     hero,
+    serviceTiles: buildServiceTiles(todayTransactions, todayExpenses),
+    recentTransactions: buildRecentTransactions(
+      todayTransactions.length > 0 ? todayTransactions : transactions,
+    ),
+    operatorSnapshot: [
+      {
+        label: "Saldo tersedia",
+        value: formatCurrency(balances.saldoAvailable),
+        detail: `Saldo awal ${formatCurrency(balances.openingSaldo)}`,
+      },
+      {
+        label: "Cash tersedia",
+        value: formatCurrency(balances.cashAvailable),
+        detail: `Cash awal ${formatCurrency(balances.openingCash)}`,
+      },
+      {
+        label: "Admin bersih",
+        value: formatCurrency(adminBersihHariIni),
+        detail: "Admin pelanggan dikurangi admin bank",
+      },
+      {
+        label: "Biaya hari ini",
+        value: formatCurrency(pengeluaranHariIni),
+        detail: "Pengeluaran operasional outlet",
+      },
+    ],
     summaryCards: [
       {
         title: "Pemasukan Hari Ini",

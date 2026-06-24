@@ -22,6 +22,37 @@ import {
 
 const today = new Date().toISOString().slice(0, 10);
 
+const SERVICE_OPTIONS = [
+  {
+    label: "Transfer",
+    helper: "Transfer antarbank atau sesama bank.",
+  },
+  {
+    label: "Tarik tunai",
+    helper: "Tarik uang tunai dari saldo agen.",
+  },
+  {
+    label: "Setor tunai",
+    helper: "Setoran tunai ke rekening pelanggan.",
+  },
+  {
+    label: "Top up e-wallet",
+    helper: "Isi saldo e-wallet pelanggan.",
+  },
+  {
+    label: "Pembayaran tagihan",
+    helper: "Pembayaran listrik, BPJS, dan tagihan lain.",
+  },
+  {
+    label: "Token listrik",
+    helper: "Penjualan token prabayar.",
+  },
+  {
+    label: "Pulsa",
+    helper: "Penjualan pulsa reguler/data.",
+  },
+];
+
 export function TransactionsPage() {
   const [rows, setRows] = useState(() => normalizeTransactionRows(transactionRows));
   const [editingId, setEditingId] = useState(null);
@@ -68,6 +99,8 @@ export function TransactionsPage() {
   const grandTotal = filteredRows.reduce((sum, row) => sum + row.totalValue, 0);
   const allTransactionsTotal = rows.reduce((sum, row) => sum + row.totalValue, 0);
   const availableBalances = calculateAvailableBalances(filteredRows, balanceSettings);
+  const selectedService =
+    SERVICE_OPTIONS.find((item) => item.label === form.category) ?? SERVICE_OPTIONS[0];
 
   useEffect(() => {
     async function loadTransactions() {
@@ -344,12 +377,50 @@ export function TransactionsPage() {
 
   return (
     <section className="page-stack">
-      <div className="page-header-card status-card">
+      <div className="operator-banner">
         <div>
-          <p className="eyebrow">Koneksi backend</p>
-          <h2>Supabase untuk penyimpanan transaksi</h2>
-          <p className="muted-copy">{statusMessage}</p>
+          <p className="eyebrow">Transaksi Harian</p>
+          <h2>Form kerja operator untuk semua layanan outlet</h2>
+          <p className="muted-copy">
+            Pilih tanggal kerja, set saldo awal hari itu, lalu input transaksi seperti aplikasi operator di HP.
+          </p>
+          <p className="operator-home-status">{statusMessage}</p>
           {errorMessage ? <p className="error-copy">{errorMessage}</p> : null}
+        </div>
+        <div className="operator-banner-side">
+          <span className="table-caption">{formatDisplayDate(form.transactionDate)}</span>
+          <p>Saldo dan cash tidak membawa nilai hari sebelumnya. Tiap tanggal harus diset sendiri.</p>
+        </div>
+      </div>
+
+      <div className="page-header-card">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Jenis layanan</p>
+            <h2>Pilih layanan yang sedang diproses</h2>
+            <p className="muted-copy">{selectedService.helper}</p>
+          </div>
+        </div>
+
+        <div className="service-pill-grid">
+          {SERVICE_OPTIONS.map((item) => (
+            <button
+              key={item.label}
+              className={`service-pill-button ${
+                form.category === item.label ? "service-pill-button-active" : ""
+              }`}
+              type="button"
+              onClick={() =>
+                setForm((current) => ({
+                  ...current,
+                  category: item.label,
+                }))
+              }
+            >
+              <strong>{item.label}</strong>
+              <span>{item.helper}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -431,147 +502,170 @@ export function TransactionsPage() {
         </article>
       </div>
 
-      <div className="page-header-card">
-        <div>
-          <p className="eyebrow">Manajemen transaksi</p>
-          <h2>
-            {editingId
-              ? "Edit transaksi dengan total yang dihitung otomatis"
-              : "Input transaksi dengan total yang dihitung otomatis"}
-          </h2>
-        </div>
+      <div className="operator-split-grid">
+        <div className="page-header-card">
+          <div>
+            <p className="eyebrow">Form transaksi</p>
+            <h2>
+              {editingId
+                ? "Edit transaksi dengan hitung otomatis"
+                : "Input transaksi dengan hitung otomatis"}
+            </h2>
+          </div>
 
-        <form className="transaction-form-grid" onSubmit={handleSubmit}>
-          <label>
-            Jenis transaksi
-            <select name="category" value={form.category} onChange={handleChange}>
-              <option>Transfer</option>
-              <option>Tarik tunai</option>
-              <option>Setor tunai</option>
-              <option>Top up e-wallet</option>
-              <option>Pembayaran tagihan</option>
-              <option>Token listrik</option>
-              <option>Pulsa</option>
-            </select>
-          </label>
-          <label>
-            Tanggal
-            <input
-              name="transactionDate"
-              type="date"
-              value={form.transactionDate}
-              onChange={handleChange}
-            />
-          </label>
-          <label>
-            Nominal
-            <input
-              name="nominal"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={form.nominal}
-              onChange={handleChange}
-            />
-          </label>
-          <label>
-            Admin pelanggan
-            <input
-              name="adminFee"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={form.adminFee}
-              onChange={handleChange}
-            />
-          </label>
-          <label>
-            Admin bank
-            <input
-              name="bankAdminFee"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={form.bankAdminFee}
-              onChange={handleChange}
-            />
-          </label>
-          <label>
-            Kasir
-            <select name="cashier" value={form.cashier} onChange={handleChange}>
-              <option>Kasir 1</option>
-              <option>Kasir 2</option>
-            </select>
-          </label>
-          <label>
-            Total dibayar pelanggan
-            <input type="text" value={formatCurrency(totalValue)} readOnly />
-          </label>
-          <label>
-            Laba bersih transaksi
-            <input type="text" value={formatCurrency(netAdminValue)} readOnly />
-          </label>
-          <button className="primary-button full-width-button" type="submit" disabled={isSaving}>
-            {isSaving
-              ? "Menyimpan..."
-              : editingId
-                ? "Simpan perubahan"
-                : "Simpan transaksi"}
-          </button>
-          {editingId ? (
-            <button
-              className="ghost-button full-width-button"
-              type="button"
-              onClick={resetForm}
-              disabled={isSaving}
-            >
-              Batal edit
+          <form className="transaction-form-grid" onSubmit={handleSubmit}>
+            <label>
+              Jenis transaksi
+              <select name="category" value={form.category} onChange={handleChange}>
+                {SERVICE_OPTIONS.map((item) => (
+                  <option key={item.label}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Tanggal
+              <input
+                name="transactionDate"
+                type="date"
+                value={form.transactionDate}
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Nominal
+              <input
+                name="nominal"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={form.nominal}
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Admin pelanggan
+              <input
+                name="adminFee"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={form.adminFee}
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Admin bank
+              <input
+                name="bankAdminFee"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={form.bankAdminFee}
+                onChange={handleChange}
+              />
+            </label>
+            <label>
+              Kasir
+              <select name="cashier" value={form.cashier} onChange={handleChange}>
+                <option>Kasir 1</option>
+                <option>Kasir 2</option>
+              </select>
+            </label>
+            <label>
+              Total dibayar pelanggan
+              <input type="text" value={formatCurrency(totalValue)} readOnly />
+            </label>
+            <label>
+              Laba bersih transaksi
+              <input type="text" value={formatCurrency(netAdminValue)} readOnly />
+            </label>
+            <button className="primary-button full-width-button" type="submit" disabled={isSaving}>
+              {isSaving
+                ? "Menyimpan..."
+                : editingId
+                  ? "Simpan perubahan"
+                  : "Simpan transaksi"}
             </button>
-          ) : null}
-        </form>
-      </div>
-
-      <div className="page-header-card">
-        <div>
-          <p className="eyebrow">Saldo dan kas</p>
-          <h2>Atur saldo awal dan uang cash awal per tanggal</h2>
-          <p className="muted-copy">
-            Tanggal <strong>{formatDisplayDate(form.transactionDate)}</strong> punya saldo
-            awal sendiri. Saat ganti tanggal, nilai tidak mengambil saldo hari kemarin.
-          </p>
+            {editingId ? (
+              <button
+                className="ghost-button full-width-button"
+                type="button"
+                onClick={resetForm}
+                disabled={isSaving}
+              >
+                Batal edit
+              </button>
+            ) : null}
+          </form>
         </div>
 
-        <form className="balance-config-grid" onSubmit={handleBalanceSubmit}>
-          <label>
-            Saldo awal
-            <input
-              name="openingSaldo"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={balanceForm.openingSaldo}
-              onChange={handleBalanceChange}
-            />
-          </label>
-          <label>
-            Cash awal
-            <input
-              name="openingCash"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={balanceForm.openingCash}
-              onChange={handleBalanceChange}
-            />
-          </label>
-          <button
-            className="primary-button full-width-button"
-            type="submit"
-            disabled={isSavingBalance}
-          >
-            {isSavingBalance ? "Menyimpan..." : "Simpan saldo awal"}
-          </button>
-        </form>
+        <div className="operator-side-stack">
+          <div className="page-header-card">
+            <div>
+              <p className="eyebrow">Saldo dan cash</p>
+              <h2>Set modal harian sebelum transaksi jalan</h2>
+              <p className="muted-copy">
+                Tanggal <strong>{formatDisplayDate(form.transactionDate)}</strong> punya saldo awal sendiri.
+              </p>
+            </div>
+
+            <form className="balance-config-grid compact-balance-grid" onSubmit={handleBalanceSubmit}>
+              <label>
+                Saldo awal
+                <input
+                  name="openingSaldo"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={balanceForm.openingSaldo}
+                  onChange={handleBalanceChange}
+                />
+              </label>
+              <label>
+                Cash awal
+                <input
+                  name="openingCash"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={balanceForm.openingCash}
+                  onChange={handleBalanceChange}
+                />
+              </label>
+              <button
+                className="primary-button full-width-button"
+                type="submit"
+                disabled={isSavingBalance}
+              >
+                {isSavingBalance ? "Menyimpan..." : "Simpan saldo awal"}
+              </button>
+            </form>
+          </div>
+
+          <div className="page-header-card surface-note-card">
+            <p className="eyebrow">Catatan Operasional</p>
+            <h2>{selectedService.label}</h2>
+            <p className="muted-copy">{selectedService.helper}</p>
+            <div className="note-stats-grid">
+              <div>
+                <span>Saldo tersedia</span>
+                <strong>{formatCurrency(availableBalances.saldoAvailable)}</strong>
+              </div>
+              <div>
+                <span>Cash tersedia</span>
+                <strong>{formatCurrency(availableBalances.cashAvailable)}</strong>
+              </div>
+              <div>
+                <span>Total transaksi</span>
+                <strong>{totalTransactions} trx</strong>
+              </div>
+              <div>
+                <span>Admin bersih</span>
+                <strong>{formatCurrency(totalNetAdmin)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {isLoading ? (

@@ -53,33 +53,26 @@ export function DashboardPage() {
 
   return (
     <section className="page-stack">
-      <div className="page-header-card status-card">
-        <div>
-          <p className="eyebrow">Status dashboard</p>
-          <h2>Ringkasan live dari Supabase</h2>
-          <p className="muted-copy">{statusMessage}</p>
-        </div>
-      </div>
-
-      <div className="dashboard-hero">
-        <div className="dashboard-hero-copy">
+      <div className="operator-home-hero">
+        <div className="operator-home-copy">
           <p className="eyebrow">{dashboardData.hero.eyebrow}</p>
           <h2>{dashboardData.hero.title}</h2>
           <p className="muted-copy">{dashboardData.hero.copy}</p>
+          <p className="operator-home-status">{statusMessage}</p>
 
           <div className="hero-actions">
             <Link className="primary-button" to="/transactions">
               Input transaksi
             </Link>
-            <Link className="ghost-button" to="/expenses">
-              Input pengeluaran
+            <Link className="ghost-button" to="/cashflow">
+              Atur saldo hari ini
             </Link>
           </div>
         </div>
 
-        <div className="hero-highlight-grid">
-          {dashboardData.operationalHighlights.map((item) => (
-            <article key={item.label} className="hero-highlight-card">
+        <div className="operator-balance-strip">
+          {dashboardData.operatorSnapshot.map((item) => (
+            <article key={item.label} className="operator-balance-card">
               <p>{item.label}</p>
               <strong>{item.value}</strong>
               <span>{item.detail}</span>
@@ -88,40 +81,111 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="summary-grid">
+      <div className="service-shortcut-grid">
+        {dashboardData.serviceTiles.map((item) => (
+          <Link
+            key={item.key}
+            className={`service-shortcut-card service-shortcut-card-${item.tone}`}
+            to={item.key === "pengeluaran" ? "/expenses" : "/transactions"}
+          >
+            <div className="service-shortcut-head">
+              <strong>{item.label}</strong>
+              <span>{item.count} trx</span>
+            </div>
+            <h3>{item.total}</h3>
+            <p>{item.detail}</p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="summary-grid dashboard-summary-grid">
         {dashboardData.summaryCards.map((card) => (
           <SummaryCard key={card.title} {...card} />
         ))}
       </div>
 
-      <div className="dashboard-grid">
-        <RevenueChart data={dashboardData.transactionTrend} />
-
-        <div className="panel side-panel">
+      <div className="operator-workspace-grid dashboard-workspace-grid">
+        <div className="panel dashboard-menu-panel">
           <div className="panel-heading">
             <div>
-              <p className="panel-kicker">Navigasi cepat</p>
-              <h3>Buka area kerja yang lebih spesifik</h3>
+              <p className="panel-kicker">Menu utama</p>
+              <h3>Area kerja operator</h3>
             </div>
           </div>
 
           <div className="quick-link-grid">
             <Link className="quick-link-card" to="/transactions">
-              <strong>Transaksi</strong>
-              <span>Input transaksi baru dan cek riwayat harian.</span>
+              <strong>Input transaksi</strong>
+              <span>Masuk ke form transfer, tarik tunai, setor tunai, top up, dan PPOB.</span>
             </Link>
             <Link className="quick-link-card" to="/cashflow">
-              <strong>Kas & Saldo</strong>
-              <span>Lihat cash tersedia, saldo tersedia, dan mutasi uang.</span>
-            </Link>
-            <Link className="quick-link-card" to="/expenses">
-              <strong>Pengeluaran</strong>
-              <span>Catat semua biaya usaha agar laba bersih akurat.</span>
+              <strong>Saldo & cash</strong>
+              <span>Set saldo awal dan cash awal per hari tanpa mengambil hari kemarin.</span>
             </Link>
             <Link className="quick-link-card" to="/reports">
-              <strong>Laba Rugi</strong>
-              <span>Lihat uang kotor, uang bersih, dan ringkasan usaha.</span>
+              <strong>Rekap laporan</strong>
+              <span>Buka rekap keseluruhan, harian, bulanan, sampai tahunan.</span>
             </Link>
+            <Link className="quick-link-card" to="/settings">
+              <strong>Pengaturan outlet</strong>
+              <span>Atur identitas usaha, kanal layanan, dan kebutuhan operasional.</span>
+            </Link>
+          </div>
+        </div>
+
+        <div className="panel side-panel dashboard-feed-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="panel-kicker">Transaksi terbaru</p>
+              <h3>Gerak outlet hari ini</h3>
+            </div>
+          </div>
+
+          <div className="operator-feed-list">
+            {dashboardData.recentTransactions.length > 0 ? (
+              dashboardData.recentTransactions.map((row) => (
+                <article key={row.code} className="operator-feed-item">
+                  <div>
+                    <strong>{row.category}</strong>
+                    <p>{row.code} - {row.cashier}</p>
+                  </div>
+                  <div className="operator-feed-side">
+                    <strong>{row.total}</strong>
+                    <span>{row.time}</span>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <article className="operator-feed-item">
+                <div>
+                  <strong>Belum ada transaksi</strong>
+                  <p>Mulai input transaksi agar home ini menampilkan aktivitas outlet.</p>
+                </div>
+              </article>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-grid dashboard-analytics-grid">
+        <RevenueChart data={dashboardData.transactionTrend} />
+
+        <div className="panel side-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="panel-kicker">Sorotan hari ini</p>
+              <h3>Posisi outlet</h3>
+            </div>
+          </div>
+
+          <div className="highlight-stack">
+            {dashboardData.operationalHighlights.map((item) => (
+              <article key={item.label} className="hero-highlight-card">
+                <p>{item.label}</p>
+                <strong>{item.value}</strong>
+                <span>{item.detail}</span>
+              </article>
+            ))}
           </div>
         </div>
       </div>

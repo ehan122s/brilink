@@ -45,7 +45,7 @@ export function InstallPrompt() {
       <div>
         <p className="install-banner-title">Pasang di HP</p>
         <p className="install-banner-copy">
-          Simpan BRILink Flow ke layar utama agar terasa seperti aplikasi.
+          Simpan BukuLink Konter ke layar utama agar pembukuan agen terasa seperti aplikasi native.
         </p>
       </div>
       <div className="install-banner-actions">

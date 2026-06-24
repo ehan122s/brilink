@@ -17,9 +17,9 @@ export default defineConfig({
       ],
       manifest: {
         id: "/",
-        name: "BRILink Flow",
-        short_name: "BRILink",
-        description: "Aplikasi operasional BRILink untuk transaksi, laporan, dan aktivitas outlet.",
+        name: "BukuLink Konter",
+        short_name: "BukuLink",
+        description: "Aplikasi pembukuan agen untuk BRILink, mini ATM, dan usaha konter.",
         theme_color: "#0a2e73",
         background_color: "#eff4ff",
         display: "standalone",

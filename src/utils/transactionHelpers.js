@@ -67,6 +67,22 @@ export function parseCurrencyValue(value) {
   return Number.parseInt(String(value).replace(/[^\d]/g, ""), 10) || 0;
 }
 
+function getNumericAmount(...candidates) {
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined || candidate === "") {
+      continue;
+    }
+
+    if (typeof candidate === "number") {
+      return candidate;
+    }
+
+    return parseCurrencyValue(candidate);
+  }
+
+  return 0;
+}
+
 export function normalizeTransactionRow(row) {
   const isoDate =
     row.isoDate ??
@@ -78,26 +94,20 @@ export function normalizeTransactionRow(row) {
         : new Date().toISOString().slice(0, 10));
 
   const code = row.code ?? row.transaction_code ?? row.id ?? "TRX-0000";
-  const nominalValue =
-    row.nominalValue ??
-    row.nominal ??
-    parseCurrencyValue(row.nominal);
-  const adminFeeValue =
-    row.adminFeeValue ??
-    row.admin_fee ??
-    parseCurrencyValue(row.adminFee);
-  const bankAdminFeeValue =
-    row.bankAdminFeeValue ??
-    row.bank_admin_fee ??
-    parseCurrencyValue(row.bankAdminFee);
-  const totalValue =
-    row.totalValue ??
-    row.total_amount ??
-    row.total ??
-    nominalValue + adminFeeValue;
+  const nominalValue = getNumericAmount(row.nominalValue, row.nominal);
+  const adminFeeValue = getNumericAmount(row.adminFeeValue, row.admin_fee, row.adminFee);
+  const bankAdminFeeValue = getNumericAmount(
+    row.bankAdminFeeValue,
+    row.bank_admin_fee,
+    row.bankAdminFee,
+  );
+  const totalValue = getNumericAmount(
+    row.totalValue,
+    row.total_amount,
+    row.total,
+  ) || nominalValue + adminFeeValue;
   const netAdminValue =
-    row.netAdminValue ??
-    adminFeeValue - bankAdminFeeValue;
+    getNumericAmount(row.netAdminValue, row.netAdmin) || adminFeeValue - bankAdminFeeValue;
 
   return {
     id: row.id ?? code,
@@ -134,18 +144,13 @@ export function getNextTransactionCode(rows) {
 }
 
 export function getTransactionBalanceImpact(row) {
-  const nominalValue =
-    row.nominalValue ??
-    row.nominal ??
-    parseCurrencyValue(row.nominal);
-  const adminFeeValue =
-    row.adminFeeValue ??
-    row.admin_fee ??
-    parseCurrencyValue(row.adminFee);
-  const bankAdminFeeValue =
-    row.bankAdminFeeValue ??
-    row.bank_admin_fee ??
-    parseCurrencyValue(row.bankAdminFee);
+  const nominalValue = getNumericAmount(row.nominalValue, row.nominal);
+  const adminFeeValue = getNumericAmount(row.adminFeeValue, row.admin_fee, row.adminFee);
+  const bankAdminFeeValue = getNumericAmount(
+    row.bankAdminFeeValue,
+    row.bank_admin_fee,
+    row.bankAdminFee,
+  );
 
   if (row.category === "Tarik tunai") {
     return {

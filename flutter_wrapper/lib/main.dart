@@ -3,17 +3,17 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const BrilinkFlowApp());
+  runApp(const BukuLinkKonterApp());
 }
 
-class BrilinkFlowApp extends StatelessWidget {
-  const BrilinkFlowApp({super.key});
+class BukuLinkKonterApp extends StatelessWidget {
+  const BukuLinkKonterApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'BRILink Flow',
+      title: 'BukuLink Konter',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF0A2E73),
@@ -123,7 +123,7 @@ class _BrilinkWebShellState extends State<BrilinkWebShell> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'BRILink Flow',
+                          'BukuLink Konter',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
@@ -186,7 +186,7 @@ class _LoadingView extends StatelessWidget {
           ),
           SizedBox(height: 18),
           Text(
-            'Membuka BRILink Flow...',
+            'Membuka BukuLink Konter...',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,

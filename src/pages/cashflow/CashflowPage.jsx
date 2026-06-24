@@ -405,13 +405,55 @@ export function CashflowPage() {
 
   return (
     <section className="page-stack">
-      <div className="page-header-card status-card">
+      <div className="operator-banner">
         <div>
           <p className="eyebrow">Pembukuan kas & saldo</p>
-          <h2>Format ringkas seperti sheet pembukuan usaha</h2>
+          <h2>Rekap kas, saldo, admin, dan modal harian dalam satu layar kerja</h2>
           <p className="muted-copy">{statusMessage}</p>
           {errorMessage ? <p className="error-copy">{errorMessage}</p> : null}
         </div>
+        <div className="operator-banner-side">
+          <span className="table-caption">{formatDisplayDate(selectedDate)}</span>
+          <p>Set modal harian per tanggal agar pembukuan tidak membawa saldo dari hari sebelumnya.</p>
+        </div>
+      </div>
+
+      <div className="summary-grid compact-summary-grid">
+        <article className="summary-card summary-card-success">
+          <div className="summary-card-head">
+            <p>Saldo Kas</p>
+            <span className="summary-chip">Tunai</span>
+          </div>
+          <strong>{formatCurrency(saldoKas)}</strong>
+          <span className="summary-accent">Uang masuk dikurangi uang keluar</span>
+        </article>
+
+        <article className="summary-card summary-card-primary">
+          <div className="summary-card-head">
+            <p>Saldo Rekening</p>
+            <span className="summary-chip">Bank</span>
+          </div>
+          <strong>{formatCurrency(saldoRekening)}</strong>
+          <span className="summary-accent">Saldo masuk dikurangi saldo keluar</span>
+        </article>
+
+        <article className="summary-card summary-card-neutral">
+          <div className="summary-card-head">
+            <p>Admin Bersih</p>
+            <span className="summary-chip">Laba</span>
+          </div>
+          <strong>{formatCurrency(labaBersihTransaksi)}</strong>
+          <span className="summary-accent">Admin pelanggan dikurangi admin bank</span>
+        </article>
+
+        <article className="summary-card summary-card-danger">
+          <div className="summary-card-head">
+            <p>Total Asset</p>
+            <span className="summary-chip">Akhir</span>
+          </div>
+          <strong>{formatCurrency(totalAsset)}</strong>
+          <span className="summary-accent">Gabungan kas dan saldo rekening</span>
+        </article>
       </div>
 
       <div className="ledger-sheet panel">

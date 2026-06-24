@@ -4,20 +4,20 @@ export function LoginPage() {
   return (
     <div className="login-shell">
       <section className="login-hero">
-        <p className="brand-tag">BRILink Flow</p>
-        <h1>Digitalisasi pencatatan transaksi dengan ritme kerja yang rapi.</h1>
+        <p className="brand-tag">BukuLink Konter</p>
+        <h1>Pembukuan agen yang terasa siap pakai sejak login pertama.</h1>
         <p className="login-copy">
-          Pantau pemasukan, pengeluaran, saldo operasional, dan aktivitas kasir
-          dalam satu dashboard yang ringan dan jelas.
+          Catat transaksi BRILink, mini ATM, dan usaha konter. Pantau saldo,
+          biaya, dan laporan usaha dalam satu alur kerja yang cepat.
         </p>
         <div className="login-stats">
           <div>
-            <strong>480+</strong>
-            <span>transaksi mingguan</span>
+            <strong>Harian</strong>
+            <span>rekap transaksi per tanggal</span>
           </div>
           <div>
-            <strong>3 outlet</strong>
-            <span>siap dipantau owner</span>
+            <strong>Bulanan</strong>
+            <span>laporan usaha siap dibaca owner</span>
           </div>
         </div>
       </section>
@@ -25,11 +25,11 @@ export function LoginPage() {
       <section className="login-panel">
         <div className="login-card">
           <p className="eyebrow">Masuk ke sistem</p>
-          <h2>Login BRILink</h2>
+          <h2>Login BukuLink</h2>
           <form className="login-form">
             <label>
               Email
-              <input type="email" placeholder="owner@brilink.id" />
+              <input type="email" placeholder="owner@bukulink.id" />
             </label>
             <label>
               Password
